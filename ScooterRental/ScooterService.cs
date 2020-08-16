@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace ScooterRental
 {
     public class ScooterService : IScooterService
     {
-        private List<Scooter> _scooters;
+        private readonly List<Scooter> _scooters;
 
         public ScooterService()
         {
@@ -13,7 +14,10 @@ namespace ScooterRental
 
         public void AddScooter(string id, decimal pricePerMinute)
         {
-            throw new System.NotImplementedException();
+            if (_scooters.Find(it => it.Id == id) == null && pricePerMinute > 0)
+            {
+                _scooters.Add(new Scooter(id, pricePerMinute));
+            }
         }
 
         public void RemoveScooter(string id)
@@ -23,7 +27,7 @@ namespace ScooterRental
 
         public IList<Scooter> GetScooters()
         {
-            throw new System.NotImplementedException();
+            return _scooters;
         }
 
         public Scooter GetScooterById(string id)
