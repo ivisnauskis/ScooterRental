@@ -1,11 +1,23 @@
-﻿namespace ScooterRental
+﻿using System;
+using System.Collections.Generic;
+
+namespace ScooterRental
 {
     public class RentalCompany : IRentalCompany
     {
+        private IScooterService _service;
+        
+        public RentalCompany(string name, IScooterService service)
+        {
+            Name = name;
+            _service = service;
+        }
+
         public string Name { get; }
         public void StartRent(string id)
         {
-            throw new System.NotImplementedException();
+            _service.GetScooterById(id).IsRented = true;
+
         }
 
         public decimal EndRent(string id)
