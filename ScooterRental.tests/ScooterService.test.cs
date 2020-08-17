@@ -1,4 +1,5 @@
-﻿using ScooterRental.Exceptions;
+﻿using System.Linq;
+using ScooterRental.Exceptions;
 using Xunit;
 
 namespace ScooterRental.tests
@@ -59,6 +60,16 @@ namespace ScooterRental.tests
             IScooterService service = new ScooterService();
 
             Assert.Throws<ScooterNotFoundException>(() => service.RemoveScooter("1"));
+        }
+
+        [Fact]
+        public void RemoveScooter_RentalInProgress_ShouldThrowScooterRentalInProgressException()
+        {
+            IScooterService service = new ScooterService();
+            service.AddScooter("1", 0.2M);
+            service.GetScooters().First(it => it.Id == "1").IsRented = true;
+
+            Assert.Throws<ScooterRentalInProgressException>(() => service.RemoveScooter("1"));
         }
 
         [Fact]

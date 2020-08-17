@@ -29,6 +29,7 @@ namespace ScooterRental
         {
             var scooterToRemove = _scooters.Find(scooter => scooter.Id == id);
             if (scooterToRemove == null) throw new ScooterNotFoundException($"Scooter by ID: {id} not found!");
+            if (scooterToRemove.IsRented) throw new ScooterRentalInProgressException("Scooter rental in progress. Cannot be deleted.");
             _scooters.Remove(scooterToRemove);
         }
 
