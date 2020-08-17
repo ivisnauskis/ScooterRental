@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using ScooterRental.Exceptions;
 
 namespace ScooterRental
 {
     public class ScooterService : IScooterService
     {
         private readonly List<Scooter> _scooters;
+        private const decimal MinimalPrice = 0.01M;
 
         public ScooterService()
         {
@@ -14,10 +16,17 @@ namespace ScooterRental
 
         public void AddScooter(string id, decimal pricePerMinute)
         {
-            if (_scooters.Find(it => it.Id == id) == null && pricePerMinute > 0)
+            if (_scooters.Find(scooter => scooter.Id == id) != null)
             {
-                _scooters.Add(new Scooter(id, pricePerMinute));
+                throw new ExistingIdException("Scooter with this ID already saved.");
             }
+
+            if (pricePerMinute < MinimalPrice)
+            {
+                throw new IncorrectPriceException($"Scooter price should be above {MinimalPrice}");
+            }
+
+            _scooters.Add(new Scooter(id, pricePerMinute));
         }
 
         public void RemoveScooter(string id)

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using ScooterRental.Exceptions;
 using Xunit;
 
 namespace ScooterRental.tests
@@ -21,48 +21,26 @@ namespace ScooterRental.tests
             service.AddScooter("1", 0.2M);
             var scooterList = service.GetScooters();
 
-            Assert.True(scooterList.Count == 1);
+            Assert.Equal(1, scooterList.Count);
         }
 
         [Fact]
-        public void AddScooter_SameId_ShouldFail()
+        public void AddScooter_SameId_ShouldThrowNotUniqueIdException()
         {
             IScooterService service = new ScooterService();
 
             service.AddScooter("1", 0.2M);
-            service.AddScooter("1", 0.2M);
-            var scooterList = service.GetScooters();
 
-            Assert.True(scooterList.Count == 1);
+            Assert.Throws<ExistingIdException>(() => service.AddScooter("1", 0.2M));
         }
 
         [Fact]
-        public void AddScooter_PriceBelowZero_ShouldFail()
+        public void AddScooter_NegativePrice_ShouldThrowIncorrectPriceException()
         {
             IScooterService service = new ScooterService();
             
-            service.AddScooter("1", -1M);
-            var scooterList = service.GetScooters();
-
-            Assert.Empty(scooterList);
+            Assert.Throws<IncorrectPriceException>(() => service.AddScooter("1", -1M));
         }
-
-
-
-
-
-        //
-        // [Fact]
-        // public void RemoveScooter_CorrectID_ShouldBeSuccessful()
-        // {
-        //     IScooterService service = new ScooterService();
-        //
-        //     service.AddScooter("1", 0.2M);
-        //     var scooterList = service.GetScooters();
-        //
-        //
-        //     Assert.True(scooterList.Count == 1);
-        // }
     }
 }
 
