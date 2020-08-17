@@ -25,7 +25,7 @@ namespace ScooterRental.tests
         }
 
         [Fact]
-        public void AddScooter_SameId_ShouldThrowNotUniqueIdException()
+        public void AddScooter_SameId_ShouldThrowExistingIdException()
         {
             IScooterService service = new ScooterService();
 
@@ -40,6 +40,43 @@ namespace ScooterRental.tests
             IScooterService service = new ScooterService();
             
             Assert.Throws<IncorrectPriceException>(() => service.AddScooter("1", -1M));
+        }
+
+        [Fact]
+        public void RemoveScooter_CorrectId_ShouldRemove()
+        {
+            IScooterService service = new ScooterService();
+            service.AddScooter("1", 0.2M);
+
+            Assert.Equal(1, service.GetScooters().Count);
+            service.RemoveScooter("1");
+            Assert.Empty(service.GetScooters());
+        }
+
+        [Fact]
+        public void RemoveScooter_IncorrectId_ShouldThrowScooterNotFoundException()
+        {
+            IScooterService service = new ScooterService();
+
+            Assert.Throws<ScooterNotFoundException>(() => service.RemoveScooter("1"));
+        }
+
+        [Fact]
+        public void GetScooterById_CorrectId_ShouldReturnScooter()
+        {
+            IScooterService service = new ScooterService();
+            service.AddScooter("1", 0.2M);
+
+            var scooter = service.GetScooterById("1");
+            Assert.Equal("1", scooter.Id);
+        }
+
+        [Fact]
+        public void GetScooterById_IncorrectId_ShouldThrowScooterNotFoundException()
+        {
+            IScooterService service = new ScooterService();
+
+            Assert.Throws<ScooterNotFoundException>(() => service.GetScooterById("1"));
         }
     }
 }

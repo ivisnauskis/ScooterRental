@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using ScooterRental.Exceptions;
+using ScooterRental.tests;
 
 namespace ScooterRental
 {
     public class ScooterService : IScooterService
     {
-        private readonly List<Scooter> _scooters;
         private const decimal MinimalPrice = 0.01M;
+        private readonly List<Scooter> _scooters;
 
         public ScooterService()
         {
@@ -17,21 +17,19 @@ namespace ScooterRental
         public void AddScooter(string id, decimal pricePerMinute)
         {
             if (_scooters.Find(scooter => scooter.Id == id) != null)
-            {
                 throw new ExistingIdException("Scooter with this ID already saved.");
-            }
 
             if (pricePerMinute < MinimalPrice)
-            {
                 throw new IncorrectPriceException($"Scooter price should be above {MinimalPrice}");
-            }
 
             _scooters.Add(new Scooter(id, pricePerMinute));
         }
 
         public void RemoveScooter(string id)
         {
-            throw new System.NotImplementedException();
+            var scooterToRemove = _scooters.Find(scooter => scooter.Id == id);
+            if (scooterToRemove == null) throw new ScooterNotFoundException($"Scooter by ID: {id} not found!");
+            _scooters.Remove(scooterToRemove);
         }
 
         public IList<Scooter> GetScooters()
@@ -41,7 +39,10 @@ namespace ScooterRental
 
         public Scooter GetScooterById(string id)
         {
-            throw new System.NotImplementedException();
+            var scooterToReturn = _scooters.Find(scooter => scooter.Id == id);
+            if (scooterToReturn == null) throw new ScooterNotFoundException($"Scooter by ID: {id} not found!");
+
+            return scooterToReturn;
         }
     }
 }
