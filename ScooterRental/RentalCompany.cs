@@ -8,13 +8,14 @@ namespace ScooterRental
     {
         private readonly Dictionary<string, DateTime> _rentedScooterStartTimes;
         private readonly IScooterService _service;
+        private readonly IRentCalculator _accountant;
 
-
-        public RentalCompany(string name, IScooterService service)
+        public RentalCompany(string name, IScooterService service, IRentCalculator accountant)
         {
             Name = name;
             _service = service;
             _rentedScooterStartTimes = new Dictionary<string, DateTime>();
+            _accountant = accountant;
         }
 
         public string Name { get; }
@@ -33,18 +34,14 @@ namespace ScooterRental
             var rentedScooter = _service.GetScooterById(id);
             if (!rentedScooter.IsRented) throw new ScooterNotRentedException($"Scooter \"{id}\" already rented.");
 
+            rentedScooter.IsRented = false;
             var startTime = _rentedScooterStartTimes[id];
             var endTime = DateTime.Now;
 
-            var price = CalculateRentSum(startTime, endTime, rentedScooter.PricePerMinute);
+            var price = _accountant.CalculateRentalPrice(startTime, endTime, rentedScooter.PricePerMinute);
             _rentedScooterStartTimes.Remove(id);
 
-            return Math.Round(price, 2);
-        }
-
-        public decimal CalculateRentSum(DateTime start, DateTime end, decimal price)
-        {
-            return (decimal) (end - start).TotalMinutes * price;
+            return price;
         }
 
         public decimal CalculateIncome(int? year, bool includeNotCompletedRentals)

@@ -1,17 +1,26 @@
 ﻿using System;
-using System.Diagnostics;
 using ScooterRental.Exceptions;
 using Xunit;
+
 
 namespace ScooterRental.tests
 {
     public class RentalCompanyTests
     {
+        private IScooterService service;
+        private IRentalCompany company;
+        private IRentCalculator accountant;
+
+        public RentalCompanyTests()
+        {
+            service = new ScooterService();
+            accountant = new RentCalculator(20M);
+            company = new RentalCompany("title", service, accountant);
+        }
+
         [Fact]
         public void StartRent_ScooterNotRented_ShouldStartRent()
         {
-            IScooterService service = new ScooterService();
-            IRentalCompany company = new RentalCompany("rental", service);
             service.AddScooter("1", 0.2M);
             company.StartRent("1");
             var result = service.GetScooterById("1").IsRented;
@@ -22,8 +31,6 @@ namespace ScooterRental.tests
         [Fact]
         public void StartRent_ScooterAlreadyRented_ShouldThrowScooterRentalInProgressException()
         {
-            IScooterService service = new ScooterService();
-            IRentalCompany company = new RentalCompany("rental", service);
             service.AddScooter("1", 0.2M);
             company.StartRent("1");
 
@@ -33,8 +40,6 @@ namespace ScooterRental.tests
         [Fact]
         public void EndRent_ScooterIsRented_ShouldEndRent()
         {
-            IScooterService service = new ScooterService();
-            IRentalCompany company = new RentalCompany("rental", service);
             service.AddScooter("1", 0.2M);
             var scooter = service.GetScooterById("1");
 
@@ -48,8 +53,6 @@ namespace ScooterRental.tests
         [Fact]
         public void EndRent_ScooterNotRented_ShouldThrowScooterNotRentedException()
         {
-            IScooterService service = new ScooterService();
-            IRentalCompany company = new RentalCompany("rental", service);
             service.AddScooter("1", 0.2M);
             var scooter = service.GetScooterById("1");
 
@@ -58,23 +61,19 @@ namespace ScooterRental.tests
         }
 
         [Fact]
-        public void EndRent_ScooterRented_ShouldReturnRentSum()
+        public void EndRend_GetPrice()
         {
-            IScooterService service = new ScooterService();
-            IRentalCompany company = new RentalCompany("rental", service);
             service.AddScooter("1", 0.2M);
-
+            var scooter = service.GetScooterById("1");
             company.StartRent("1");
-            var startTime = DateTime.Now;
+            
+            Assert.Equal(0M, Math.Round(company.EndRent("1")));
+        }
 
-            var endTime = startTime.AddMinutes(5);
+        [Fact]
+        public void CalculateIncome()
+        {
 
-            var rentalCompany = (RentalCompany) company; 
-            var res = rentalCompany.CalculateRentSum(startTime, endTime, 0.2M);
-
-            Assert.Equal(0, company.EndRent("1"));
-            Assert.Equal(1, res);
         }
     }
 }
-
