@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using FluentAssertions;
 using Moq;
 using ScooterRental.Exceptions;
 using Xunit;
@@ -24,7 +25,7 @@ namespace ScooterRental.tests
         public void NameTest()
         {
             var company = new RentalCompany("Scooter", _service.Object, _calculator.Object);
-            Assert.Equal("Scooter", company.Name);
+            company.Name.Should().Be("Scooter");
         }
 
         [Fact]
@@ -32,11 +33,10 @@ namespace ScooterRental.tests
         {
             var scooter = new Scooter("1", 0.2M);
             _service.Setup(x => x.GetScooterById("1")).Returns(scooter);
-            
-            Assert.False(scooter.IsRented);
-            _company.StartRent("1");
 
-            Assert.True(scooter.IsRented);
+            scooter.IsRented.Should().Be(false);
+            _company.StartRent("1");
+            scooter.IsRented.Should().Be(true);
         }
 
         [Fact]
@@ -45,7 +45,8 @@ namespace ScooterRental.tests
             var scooter = new Scooter("1", 0.2M) {IsRented = true};
             _service.Setup(x => x.GetScooterById("1")).Returns(scooter);
 
-            Assert.Throws<ScooterRentalInProgressException>(() => _company.StartRent("1"));
+            Action act = () => _company.StartRent("1");
+            act.Should().Throw<ScooterRentalInProgressException>();
         }
 
         [Fact]
@@ -55,7 +56,7 @@ namespace ScooterRental.tests
             _service.Setup(x => x.GetScooterById("1")).Returns(scooter);
             _company.StartRent("1");
             _company.EndRent("1");
-            Assert.False(scooter.IsRented);
+            scooter.IsRented.Should().Be(false);
         }
         
         [Fact]
@@ -64,8 +65,9 @@ namespace ScooterRental.tests
             var scooter = new Scooter("1", 0.2M);
             _service.Setup(x => x.GetScooterById("1")).Returns(scooter);
 
-            Assert.False(scooter.IsRented);
-            Assert.Throws<ScooterNotRentedException>(() => _company.EndRent("1"));
+            scooter.IsRented.Should().Be(false);
+            Action act = () => _company.EndRent("1");
+            act.Should().Throw<ScooterNotRentedException>();
         }
         
         [Fact]
@@ -79,67 +81,40 @@ namespace ScooterRental.tests
 
             _company.StartRent("1");
 
-            var rentPrice = _company.EndRent("1");
-        
-            Assert.Equal(15M, rentPrice);
+            _company.EndRent("1").Should().Be(15M);
         }
         
         [Fact]
         public void CalculateIncome_AllYearsActiveRentalsNotIncluded()
         {
             var rideHistory = GetRideHistory();
-            _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(52.5M);
+            CalculatorSetup(rideHistory, 52.5M);
             _company = new RentalCompany(GetActiveRides(), _calculator.Object, rideHistory, _service.Object, "rental");
-
-            var income = _company.CalculateIncome(null, false);
-
-            Assert.Equal(52.5M, income);
+            _company.CalculateIncome(null, false).Should().Be(52.5M);
         }
 
         [Theory]
-        [InlineData(2018, 35)]
-        [InlineData(2019, 4)]
-        [InlineData(2020, 13.5)]
-        public void CalculateIncome_SpecificYearActiveRentalsNotIncluded(int year, decimal expected)
+        [InlineData(2018, 35, 35, false)]
+        [InlineData(2019, 4, 4, false)]
+        [InlineData(2020, 13.5, 13.5, false)]
+        [InlineData(2018, 35, 35, true)]
+        [InlineData(2019, 4, 4, true)]
+        [InlineData(2020, 13.5, 19.5, true)]
+        [InlineData(null, 52.5, 58.5, true)]
+        public void CalculateIncome(int? year, decimal expectedNotIncludingActiveRides, decimal expectedTotal, bool include)
         {
-            var rideHistory = GetRideHistory().Where(it => it.EndTime.Year == year).ToList();
-            _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(expected);
-        
+            var rideHistory = year == null ? GetRideHistory() :
+                GetRideHistory().Where(it => it.EndTime.Year == year).ToList();
+            CalculatorSetup(rideHistory, expectedNotIncludingActiveRides);
             _company = new RentalCompany(GetActiveRides(), _calculator.Object, rideHistory, _service.Object, "rental");
-        
-            var income = _company.CalculateIncome(year, false);
-        
-            Assert.Equal(expected, income);
+            _company.CalculateIncome(year, include).Should().Be(expectedTotal);
         }
 
-        [Theory]
-        [InlineData(2018, 35, 35)]
-        [InlineData(2019, 4, 4)]
-        [InlineData(2020, 13.5, 19.5)]
-        public void CalculateIncome_SpecificYearActiveIncluded(int year, decimal expected, decimal expectedTotal)
+        private void CalculatorSetup(List<Ride> rideHistory, decimal toReturn)
         {
-            var rideHistory = GetRideHistory().Where(it => it.EndTime.Year == year).ToList();
-
-            _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(expected);
-            _calculator.Setup(x => 
-                x.CalculateRentalPrice(It.IsAny<DateTime>(), It.IsAny<DateTime>(), 0.2M)).Returns(2);
-
-            _company = new RentalCompany(GetActiveRides(), _calculator.Object, rideHistory, _service.Object, "rental");
-
-            Assert.Equal(expectedTotal, _company.CalculateIncome(year, true));
-        }
-
-        [Fact] public void CalculateIncome_AllYearsActiveIncluded()
-        {
-            var rideHistory = GetRideHistory();
-
-            _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(52.5M);
+            _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(toReturn);
             _calculator.Setup(x =>
                 x.CalculateRentalPrice(It.IsAny<DateTime>(), It.IsAny<DateTime>(), 0.2M)).Returns(2);
-
-            _company = new RentalCompany(GetActiveRides(), _calculator.Object, rideHistory, _service.Object, "rental");
-
-            Assert.Equal(58.5M, _company.CalculateIncome(null, true));
         }
 
         private Dictionary<string, Ride> GetActiveRides()
