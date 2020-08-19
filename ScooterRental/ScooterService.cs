@@ -28,7 +28,7 @@ namespace ScooterRental
 
         public void RemoveScooter(string id)
         {
-            if (!_scooters.ContainsKey(id)) throw new ScooterNotFoundException($"Scooter by ID: {id} not found!");
+            GetScooterById(id);
             if (_scooters[id].IsRented) throw new ScooterRentalInProgressException("Scooter rental in progress. Cannot be deleted.");
             _scooters.Remove(id);
         }
