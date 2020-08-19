@@ -15,6 +15,11 @@ namespace ScooterRental
             _scooters = new Dictionary<string, Scooter>();
         }
 
+        public ScooterService(Dictionary<string, Scooter> scooterInventory)
+        {
+            _scooters = scooterInventory;
+        }
+
         public void AddScooter(string id, decimal pricePerMinute)
         {
             if (_scooters.ContainsKey(id))
@@ -28,8 +33,9 @@ namespace ScooterRental
 
         public void RemoveScooter(string id)
         {
-            GetScooterById(id);
-            if (_scooters[id].IsRented) throw new ScooterRentalInProgressException("Scooter rental in progress. Cannot be deleted.");
+            if (!_scooters.ContainsKey(id)) throw new ScooterNotFoundException($"Scooter by ID: {id} not found!");
+            if (_scooters[id].IsRented)
+                throw new ScooterRentalInProgressException("Scooter rental in progress. Cannot be deleted.");
             _scooters.Remove(id);
         }
 

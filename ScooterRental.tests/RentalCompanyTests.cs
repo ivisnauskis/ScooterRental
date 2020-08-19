@@ -26,6 +26,7 @@ namespace ScooterRental.tests
             var company = new RentalCompany("Scooter", _service.Object, _calculator.Object);
             Assert.Equal("Scooter", company.Name);
         }
+
         [Fact]
         public void StartRent_ScooterNotRented_ShouldStartRent()
         {
@@ -101,7 +102,7 @@ namespace ScooterRental.tests
         [InlineData(2020, 13.5)]
         public void CalculateIncome_SpecificYearActiveRentalsNotIncluded(int year, decimal expected)
         {
-            var rideHistory = GetRideHistory().Where(it => it.RideEndTime.Year == year).ToList();
+            var rideHistory = GetRideHistory().Where(it => it.EndTime.Year == year).ToList();
             _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(expected);
         
             _company = new RentalCompany(GetActiveRides(), _calculator.Object, rideHistory, _service.Object, "rental");
@@ -117,7 +118,7 @@ namespace ScooterRental.tests
         [InlineData(2020, 13.5, 19.5)]
         public void CalculateIncome_SpecificYearActiveIncluded(int year, decimal expected, decimal expectedTotal)
         {
-            var rideHistory = GetRideHistory().Where(it => it.RideEndTime.Year == year).ToList();
+            var rideHistory = GetRideHistory().Where(it => it.EndTime.Year == year).ToList();
 
             _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(expected);
             _calculator.Setup(x => 

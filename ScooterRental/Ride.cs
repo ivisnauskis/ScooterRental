@@ -4,22 +4,22 @@ namespace ScooterRental
 {
     public class Ride
     {
-        public Scooter Scooter { get; }
-        public DateTime RideStartTime { get; }
-        public DateTime RideEndTime { get; private set; }
-        public decimal RidePrice { get; private set; }
-        public bool IsActive { get; private set; }
-
-        public Ride(Scooter scooter, DateTime rideStartTime)
+        public Ride(Scooter scooter, DateTime startTime)
         {
             Scooter = scooter;
-            RideStartTime = rideStartTime;
+            StartTime = startTime;
             IsActive = true;
         }
 
+        public Scooter Scooter { get; }
+        public DateTime StartTime { get; }
+        public DateTime EndTime { get; private set; }
+        public decimal RidePrice { get; private set; }
+        public bool IsActive { get; private set; }
+
         public void EndRide(DateTime endTime, decimal ridePrice)
         {
-            RideEndTime = endTime;
+            EndTime = endTime;
             RidePrice = ridePrice;
             IsActive = false;
         }
