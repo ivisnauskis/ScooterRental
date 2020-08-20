@@ -8,8 +8,8 @@ namespace ScooterRental
     public class RentalCompany : IRentalCompany
     {
         private readonly Dictionary<string, Ride> _activeRides = new Dictionary<string, Ride>();
-        private readonly List<Ride> _rideHistory = new List<Ride>();
         private readonly IRentCalculator _calculator;
+        private readonly List<Ride> _rideHistory = new List<Ride>();
         private readonly IScooterService _service;
 
         public RentalCompany(string name, IScooterService service, IRentCalculator calculator)
@@ -51,18 +51,21 @@ namespace ScooterRental
             var rideHistory =
                 year == null ? _rideHistory : _rideHistory.Where(ride => ride.EndTime.Year == year).ToList();
 
-            if (!includeNotCompletedRentals)
-                return _calculator.CalculateIncome(rideHistory);
+            var completedRidesIncome = _calculator.CalculateIncome(rideHistory);
 
+            return completedRidesIncome + (includeNotCompletedRentals ? GetActiveRidesPrice(year) : 0);
+        }
+
+        private decimal GetActiveRidesPrice(int? year)
+        {
             var endTime = DateTime.Now;
-            var activeRidesPrice =
-                year == endTime.Year || year == null
-                    ? _activeRides.Values.ToList()
-                        .Select(ride =>
-                            _calculator.CalculateRentalPrice(ride.StartTime, endTime, ride.Scooter.PricePerMinute))
-                        .Sum()
-                    : decimal.Zero;
-            return _calculator.CalculateIncome(rideHistory) + activeRidesPrice;
+            var rides = year == null
+                ? _activeRides.Values
+                : _activeRides.Values.Where(ride => ride.StartTime.Year == year);
+
+            return rides
+                .Select(ride => _calculator.CalculateRentalPrice(ride.StartTime, endTime, ride.Scooter.PricePerMinute))
+                .Sum();
         }
 
         private void StartRide(Scooter scooter)
@@ -70,6 +73,7 @@ namespace ScooterRental
             _activeRides.Add(scooter.Id, new Ride(scooter, DateTime.Now));
             scooter.IsRented = true;
         }
+
         private decimal EndRide(Ride ride)
         {
             var endTime = DateTime.Now;

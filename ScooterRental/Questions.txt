@@ -1,0 +1,24 @@
+Considering price per minute is 0.2
+max per day 20e
+max in hours = 1h 40min
+
+start rent on 01.01 23:30  
+stop rent on 02.01 23:30   
+ 
+day1 + day2 = 12 + 20 
+or
+day1 + day2 = 20
+
+start rent on 01.01 12:00
+full day on 02.01
+stop rent on 03.01 12:00
+
+20 + 20 + 20 ?
+
+------------------------------------
+
+Ride has reference to Scooter.
+if the scooter is removed from inventory.
+the scooter will be kept in ride history.
+
+should i keep it or change to string id.

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using ScooterRental.Exceptions;
 
@@ -9,6 +10,10 @@ namespace ScooterRental
     {
         private readonly decimal _maxPrice;
 
+        public RentCalculator()
+        {
+            decimal.TryParse(ConfigurationManager.AppSettings.Get("maxPrice"), out _maxPrice);
+        }
         public RentCalculator(decimal maxPrice)
         {
             _maxPrice = maxPrice;

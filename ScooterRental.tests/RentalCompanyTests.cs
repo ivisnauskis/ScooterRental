@@ -97,16 +97,17 @@ namespace ScooterRental.tests
         [InlineData(2018, 35, 35, false)]
         [InlineData(2019, 4, 4, false)]
         [InlineData(2020, 13.5, 13.5, false)]
-        [InlineData(2018, 35, 35, true)]
+        [InlineData(2018, 35, 37, true)]
         [InlineData(2019, 4, 4, true)]
         [InlineData(2020, 13.5, 19.5, true)]
-        [InlineData(null, 52.5, 58.5, true)]
+        [InlineData(null, 52.5, 60.5, true)]
         public void CalculateIncome(int? year, decimal expectedNotIncludingActiveRides, decimal expectedTotal, bool include)
         {
             var rideHistory = year == null ? GetRideHistory() :
                 GetRideHistory().Where(it => it.EndTime.Year == year).ToList();
             CalculatorSetup(rideHistory, expectedNotIncludingActiveRides);
             _company = new RentalCompany(GetActiveRides(), _calculator.Object, rideHistory, _service.Object, "rental");
+
             _company.CalculateIncome(year, include).Should().Be(expectedTotal);
         }
 
@@ -123,7 +124,8 @@ namespace ScooterRental.tests
             {
                 {"7", new Ride(new Scooter("7", 0.2M), new DateTime(2020, 8, 1))},
                 {"8", new Ride(new Scooter("8", 0.2M), new DateTime(2020, 8, 1))},
-                {"9", new Ride(new Scooter("9", 0.2M), new DateTime(2020, 8, 1))}
+                {"9", new Ride(new Scooter("9", 0.2M), new DateTime(2020, 8, 1))},
+                {"10", new Ride(new Scooter("10", 0.2M), new DateTime(2018, 8, 1))}
             };
         }
 

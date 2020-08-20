@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using FluentAssertions;
 using ScooterRental.Exceptions;
 using Xunit;
 
@@ -17,7 +19,7 @@ namespace ScooterRental.tests
         public void GetScooters_ReturnsEmptyList()
         {
             var scooterList = service.GetScooters();
-            Assert.Empty(scooterList);
+            scooterList.Should().BeEmpty();
         }
 
         [Fact]
@@ -25,22 +27,22 @@ namespace ScooterRental.tests
         {
             service.AddScooter("1", 0.2M);
             var scooterList = service.GetScooters();
-
-            Assert.Equal(1, scooterList.Count);
+            scooterList.Count.Should().Be(1);
         }
 
         [Fact]
         public void AddScooter_SameId_ShouldThrowExistingIdException()
         {
             service.AddScooter("1", 0.2M);
-
-            Assert.Throws<ExistingIdException>(() => service.AddScooter("1", 0.2M));
+            Action act = () => service.AddScooter("1", 0.2M);
+            act.Should().Throw<ExistingIdException>();
         }
 
         [Fact]
         public void AddScooter_NegativePrice_ShouldThrowIncorrectPriceException()
         {
-            Assert.Throws<IncorrectPriceException>(() => service.AddScooter("1", -1M));
+            Action act = () => service.AddScooter("1", -1M);
+            act.Should().Throw<IncorrectPriceException>();
         }
 
         [Fact]
@@ -48,15 +50,16 @@ namespace ScooterRental.tests
         {
             service.AddScooter("1", 0.2M);
 
-            Assert.Equal(1, service.GetScooters().Count);
+            service.GetScooters().Count.Should().Be(1);
             service.RemoveScooter("1");
-            Assert.Empty(service.GetScooters());
+            service.GetScooters().Should().BeEmpty();
         }
 
         [Fact]
         public void RemoveScooter_IncorrectId_ShouldThrowScooterNotFoundException()
         {
-            Assert.Throws<ScooterNotFoundException>(() => service.RemoveScooter("1"));
+            Action act = () => service.RemoveScooter("1");
+            act.Should().Throw<ScooterNotFoundException>();
         }
 
         [Fact]
@@ -65,7 +68,8 @@ namespace ScooterRental.tests
             service.AddScooter("1", 0.2M);
             service.GetScooters().First(it => it.Id == "1").IsRented = true;
 
-            Assert.Throws<ScooterRentalInProgressException>(() => service.RemoveScooter("1"));
+            Action act = () => service.RemoveScooter("1");
+            act.Should().Throw<ScooterRentalInProgressException>();
         }
 
         [Fact]
@@ -74,13 +78,14 @@ namespace ScooterRental.tests
             service.AddScooter("1", 0.2M);
 
             var scooter = service.GetScooterById("1");
-            Assert.Equal("1", scooter.Id);
+            scooter.Id.Should().Be("1");
         }
 
         [Fact]
         public void GetScooterById_IncorrectId_ShouldThrowScooterNotFoundException()
         {
-            Assert.Throws<ScooterNotFoundException>(() => service.GetScooterById("1"));
+            Action act = () => service.GetScooterById("1");
+            act.Should().Throw<ScooterNotFoundException>();
         }
     }
 }
