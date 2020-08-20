@@ -2,6 +2,7 @@
 using System.Linq;
 using FluentAssertions;
 using ScooterRental.Exceptions;
+using ScooterRental.Interfaces;
 using Xunit;
 
 namespace ScooterRental.tests

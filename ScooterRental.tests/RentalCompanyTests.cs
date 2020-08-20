@@ -4,6 +4,7 @@ using System.Linq;
 using FluentAssertions;
 using Moq;
 using ScooterRental.Exceptions;
+using ScooterRental.Interfaces;
 using Xunit;
 
 namespace ScooterRental.tests

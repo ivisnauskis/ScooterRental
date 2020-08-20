@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 
 namespace ScooterRental
 {
@@ -23,12 +22,6 @@ namespace ScooterRental
             EndTime = endTime;
             RidePrice = ridePrice;
             IsActive = false;
-        }
-
-        public string A()
-        {
-            var sAttr = ConfigurationManager.AppSettings.Get("maxPrice");
-            return sAttr;
         }
     }
 }

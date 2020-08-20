@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using ScooterRental.Exceptions;
+using ScooterRental.Interfaces;
 using ScooterRental.tests;
 
 namespace ScooterRental
