@@ -15,7 +15,7 @@ namespace ScooterRental
             _maxPrice = maxPrice;
         }
 
-        public decimal CalculateIncome(List<Ride> rideHistory)
+        public decimal CalculateIncome(IList<Ride> rideHistory)
         {
             return rideHistory.Select(ride => ride.RidePrice).Sum();
         }

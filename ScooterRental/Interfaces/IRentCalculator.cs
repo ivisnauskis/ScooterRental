@@ -7,6 +7,6 @@ namespace ScooterRental.Interfaces
     {
         decimal CalculateRentalPrice(DateTime start, DateTime end, decimal pricePerMinute);
 
-        decimal CalculateIncome(List<Ride> rideHistory);
+        decimal CalculateIncome(IList<Ride> rideHistory);
     }
 }
