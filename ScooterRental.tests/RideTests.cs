@@ -1,4 +1,5 @@
 ﻿using System;
+using FluentAssertions;
 using Xunit;
 
 namespace ScooterRental.tests
@@ -11,11 +12,10 @@ namespace ScooterRental.tests
             var ride = new Ride(new Scooter("1", 0.2M), new DateTime(2019, 1, 1, 12, 0, 0));
             ride.EndRide(new DateTime(2019, 1, 1, 12, 10, 0), 1M);
 
-            Assert.Equal("1", ride.Scooter.Id);
-            Assert.Equal(new DateTime(2019, 1, 1, 12, 0, 0), ride.StartTime);
-            Assert.Equal(new DateTime(2019, 1, 1, 12, 10, 0), ride.EndTime);
-            Assert.Equal(1M, ride.RidePrice);
-            Assert.False(ride.IsActive);
+            ride.Scooter.Id.Should().Be("1");
+            ride.StartTime.Should().Be(new DateTime(2019, 1, 1, 12, 0, 0));
+            ride.EndTime.Should().Be(new DateTime(2019, 1, 1, 12, 10, 0));
+            ride.RidePrice.Should().Be(1M);
         }
     }
 }

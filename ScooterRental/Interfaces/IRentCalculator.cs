@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ScooterRental
+namespace ScooterRental.Interfaces
 {
     public interface IRentCalculator
     {
         decimal CalculateRentalPrice(DateTime start, DateTime end, decimal pricePerMinute);
 
-        decimal CalculateIncome(List<Ride> rideHistory);
+        decimal CalculateIncome(IList<Ride> rideHistory);
     }
 }

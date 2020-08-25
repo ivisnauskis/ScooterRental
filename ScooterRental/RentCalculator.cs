@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using ScooterRental.Exceptions;
+using ScooterRental.Interfaces;
 
 namespace ScooterRental
 {
@@ -14,7 +15,7 @@ namespace ScooterRental
             _maxPrice = maxPrice;
         }
 
-        public decimal CalculateIncome(List<Ride> rideHistory)
+        public decimal CalculateIncome(IList<Ride> rideHistory)
         {
             return rideHistory.Select(ride => ride.RidePrice).Sum();
         }

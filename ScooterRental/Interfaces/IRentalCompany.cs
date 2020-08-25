@@ -1,4 +1,4 @@
-﻿namespace ScooterRental
+﻿namespace ScooterRental.Interfaces
 {
     public interface IRentalCompany
     {

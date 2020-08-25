@@ -1,145 +1,104 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using FluentAssertions;
 using Moq;
-using ScooterRental.Exceptions;
+using ScooterRental.Interfaces;
 using Xunit;
 
 namespace ScooterRental.tests
 {
     public class RentalCompanyTests
     {
-        private IRentalCompany _company;
-        private readonly Mock<IScooterService> _service;
         private readonly Mock<IRentCalculator> _calculator;
+        private readonly IRentalCompany _company;
+        private readonly Mock<IRideService> _rideService;
+        private readonly Mock<IScooterService> _scooterService;
 
         public RentalCompanyTests()
         {
-            _service = new Mock<IScooterService>();
+            _scooterService = new Mock<IScooterService>();
             _calculator = new Mock<IRentCalculator>();
-            _company = new RentalCompany("title", _service.Object, _calculator.Object);
+            _rideService = new Mock<IRideService>();
+
+            ScooterServiceSetup();
+            _company = new RentalCompany("title", _scooterService.Object, _calculator.Object, _rideService.Object);
         }
 
         [Fact]
         public void NameTest()
         {
-            var company = new RentalCompany("Scooter", _service.Object, _calculator.Object);
-            Assert.Equal("Scooter", company.Name);
+            _company.Name.Should().Be("title");
         }
 
         [Fact]
         public void StartRent_ScooterNotRented_ShouldStartRent()
         {
-            var scooter = new Scooter("1", 0.2M);
-            _service.Setup(x => x.GetScooterById("1")).Returns(scooter);
-            
-            Assert.False(scooter.IsRented);
+            var scooter = _scooterService.Object.GetScooterById("1");
             _company.StartRent("1");
-
-            Assert.True(scooter.IsRented);
+            _rideService.Verify(rs => rs.StartRide(scooter), Times.Once);
         }
 
-        [Fact]
-        public void StartRent_ScooterAlreadyRented_ShouldThrowScooterRentalInProgressException()
-        {
-            var scooter = new Scooter("1", 0.2M) {IsRented = true};
-            _service.Setup(x => x.GetScooterById("1")).Returns(scooter);
-
-            Assert.Throws<ScooterRentalInProgressException>(() => _company.StartRent("1"));
-        }
 
         [Fact]
         public void EndRent_ScooterIsRented_ShouldEndRent()
         {
-            var scooter = new Scooter("1", 0.2M);
-            _service.Setup(x => x.GetScooterById("1")).Returns(scooter);
-            _company.StartRent("1");
             _company.EndRent("1");
-            Assert.False(scooter.IsRented);
+            _rideService.Verify(rs => rs.EndRide("1"), Times.Once);
         }
-        
-        [Fact]
-        public void EndRent_ScooterNotRented_ShouldThrowScooterNotRentedException()
-        {
-            var scooter = new Scooter("1", 0.2M);
-            _service.Setup(x => x.GetScooterById("1")).Returns(scooter);
 
-            Assert.False(scooter.IsRented);
-            Assert.Throws<ScooterNotRentedException>(() => _company.EndRent("1"));
-        }
-        
         [Fact]
         public void EndRent_GetPrice()
         {
-            var scooter = new Scooter("1", 0.2M);
-            _service.Setup(x => x.GetScooterById("1")).Returns(scooter);
-            _calculator
-                .Setup(x => x.CalculateRentalPrice(It.IsAny<DateTime>(), It.IsAny<DateTime>(), 0.2M))
-                .Returns(15M);
-
-            _company.StartRent("1");
-
-            var rentPrice = _company.EndRent("1");
-        
-            Assert.Equal(15M, rentPrice);
-        }
-        
-        [Fact]
-        public void CalculateIncome_AllYearsActiveRentalsNotIncluded()
-        {
-            var rideHistory = GetRideHistory();
-            _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(52.5M);
-            _company = new RentalCompany(GetActiveRides(), _calculator.Object, rideHistory, _service.Object, "rental");
-
-            var income = _company.CalculateIncome(null, false);
-
-            Assert.Equal(52.5M, income);
+            _rideService.Setup(rs => rs.EndRide("1")).Returns(2M);
+            _company.EndRent("1").Should().Be(2M);
         }
 
         [Theory]
-        [InlineData(2018, 35)]
-        [InlineData(2019, 4)]
-        [InlineData(2020, 13.5)]
-        public void CalculateIncome_SpecificYearActiveRentalsNotIncluded(int year, decimal expected)
+        [InlineData(2018, 35, 35, false)]
+        [InlineData(2019, 4, 4, false)]
+        [InlineData(2020, 13.5, 13.5, false)]
+        [InlineData(2018, 35, 37, true)]
+        [InlineData(2019, 4, 4, true)]
+        [InlineData(2020, 13.5, 19.5, true)]
+        [InlineData(null, 52.5, 60.5, true)]
+        [InlineData(null, 52.5, 52.5, false)]
+        public void CalculateIncome(int? year, decimal expectedNotIncludingActiveRides, decimal expectedTotal,
+            bool include)
         {
-            var rideHistory = GetRideHistory().Where(it => it.EndTime.Year == year).ToList();
-            _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(expected);
-        
-            _company = new RentalCompany(GetActiveRides(), _calculator.Object, rideHistory, _service.Object, "rental");
-        
-            var income = _company.CalculateIncome(year, false);
-        
-            Assert.Equal(expected, income);
+            var rideHistory = year.HasValue
+                ? GetRideHistory().Where(it => it.EndTime.Year == year).ToList()
+                : GetRideHistory();
+
+            RideServiceSetup(rideHistory, year);
+            CalculatorSetup(rideHistory, expectedNotIncludingActiveRides);
+
+            _company.CalculateIncome(year, include).Should().Be(expectedTotal);
         }
 
-        [Theory]
-        [InlineData(2018, 35, 35)]
-        [InlineData(2019, 4, 4)]
-        [InlineData(2020, 13.5, 19.5)]
-        public void CalculateIncome_SpecificYearActiveIncluded(int year, decimal expected, decimal expectedTotal)
+        private void CalculatorSetup(List<Ride> rideHistory, decimal toReturn)
         {
-            var rideHistory = GetRideHistory().Where(it => it.EndTime.Year == year).ToList();
-
-            _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(expected);
-            _calculator.Setup(x => 
-                x.CalculateRentalPrice(It.IsAny<DateTime>(), It.IsAny<DateTime>(), 0.2M)).Returns(2);
-
-            _company = new RentalCompany(GetActiveRides(), _calculator.Object, rideHistory, _service.Object, "rental");
-
-            Assert.Equal(expectedTotal, _company.CalculateIncome(year, true));
-        }
-
-        [Fact] public void CalculateIncome_AllYearsActiveIncluded()
-        {
-            var rideHistory = GetRideHistory();
-
-            _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(52.5M);
+            _calculator.Setup(x => x.CalculateIncome(rideHistory)).Returns(toReturn);
             _calculator.Setup(x =>
                 x.CalculateRentalPrice(It.IsAny<DateTime>(), It.IsAny<DateTime>(), 0.2M)).Returns(2);
+        }
 
-            _company = new RentalCompany(GetActiveRides(), _calculator.Object, rideHistory, _service.Object, "rental");
+        private void RideServiceSetup(List<Ride> rideHistory, int? year)
+        {
+            _rideService.Setup(rs => rs.GetRideHistory(year)).Returns(rideHistory);
 
-            Assert.Equal(58.5M, _company.CalculateIncome(null, true));
+            var count = year.HasValue
+                ? GetActiveRides().Values.Count(ride => ride.StartTime.Year == year)
+                : GetActiveRides().Count;
+            var expected = count * 2M;
+
+            _rideService.Setup(rs => rs.GetActiveRidesPrice(It.IsAny<int?>())).Returns(expected);
+        }
+
+        private void ScooterServiceSetup()
+        {
+            var scooter = new Scooter("1", 0.2M);
+            _scooterService.Setup(x => x.GetScooterById("1")).Returns(scooter);
         }
 
         private Dictionary<string, Ride> GetActiveRides()
@@ -148,7 +107,8 @@ namespace ScooterRental.tests
             {
                 {"7", new Ride(new Scooter("7", 0.2M), new DateTime(2020, 8, 1))},
                 {"8", new Ride(new Scooter("8", 0.2M), new DateTime(2020, 8, 1))},
-                {"9", new Ride(new Scooter("9", 0.2M), new DateTime(2020, 8, 1))}
+                {"9", new Ride(new Scooter("9", 0.2M), new DateTime(2020, 8, 1))},
+                {"10", new Ride(new Scooter("10", 0.2M), new DateTime(2018, 8, 1))}
             };
         }
 
@@ -156,23 +116,17 @@ namespace ScooterRental.tests
         {
             var r1 = new Ride(new Scooter("1", 0.2M), new DateTime(2019, 1, 1));
             r1.EndRide(new DateTime(2019, 1, 1), 1.5M);
-
             var r2 = new Ride(new Scooter("2", 0.2M), new DateTime(2019, 1, 1));
             r2.EndRide(new DateTime(2019, 1, 1), 2.5M);
-
             var r3 = new Ride(new Scooter("3", 0.2M), new DateTime(2020, 1, 1));
             r3.EndRide(new DateTime(2020, 1, 1), 3.5M);
-
             var r4 = new Ride(new Scooter("4", 0.2M), new DateTime(2020, 1, 1));
             r4.EndRide(new DateTime(2020, 1, 1), 10M);
-
             var r5 = new Ride(new Scooter("5", 0.2M), new DateTime(2018, 1, 1));
             r5.EndRide(new DateTime(2018, 1, 1), 20M);
-
             var r6 = new Ride(new Scooter("6", 0.2M), new DateTime(2018, 1, 1));
             r6.EndRide(new DateTime(2018, 1, 1), 15M);
-
-            return new List<Ride>() {r1, r2, r3, r4, r5, r6};
+            return new List<Ride> {r1, r2, r3, r4, r5, r6};
         }
     }
 }
