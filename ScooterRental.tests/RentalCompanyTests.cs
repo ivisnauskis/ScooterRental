@@ -66,9 +66,9 @@ namespace ScooterRental.tests
         public void CalculateIncome(int? year, decimal expectedNotIncludingActiveRides, decimal expectedTotal,
             bool include)
         {
-            var rideHistory = year == null
-                ? GetRideHistory()
-                : GetRideHistory().Where(it => it.EndTime.Year == year).ToList();
+            var rideHistory = year.HasValue
+                ? GetRideHistory().Where(it => it.EndTime.Year == year).ToList()
+                : GetRideHistory();
 
             RideServiceSetup(rideHistory, year);
             CalculatorSetup(rideHistory, expectedNotIncludingActiveRides);
@@ -87,9 +87,9 @@ namespace ScooterRental.tests
         {
             _rideService.Setup(rs => rs.GetRideHistory(year)).Returns(rideHistory);
 
-            var count = year == null
-                ? GetActiveRides().Count
-                : GetActiveRides().Values.Count(ride => ride.StartTime.Year == year);
+            var count = year.HasValue
+                ? GetActiveRides().Values.Count(ride => ride.StartTime.Year == year)
+                : GetActiveRides().Count;
             var expected = count * 2M;
 
             _rideService.Setup(rs => rs.GetActiveRidesPrice(It.IsAny<int?>())).Returns(expected);

@@ -26,9 +26,9 @@ namespace ScooterRental
 
         public IList<Ride> GetRideHistory(int? year)
         {
-            return year == null
-                    ? _rideHistory
-                    : _rideHistory.Where(ride => ride.EndTime.Year == year).ToList();
+            return year.HasValue
+                ? _rideHistory.Where(ride => ride.EndTime.Year == year).ToList()
+                : _rideHistory;
         }
 
         public void StartRide(Scooter scooter)
@@ -58,9 +58,9 @@ namespace ScooterRental
         public decimal GetActiveRidesPrice(int? year)
         {
             var endTime = DateTime.Now;
-            var rides = year == null
-                ? _activeRides.Values
-                : _activeRides.Values.Where(ride => ride.StartTime.Year == year);
+            var rides = year.HasValue
+                ? _activeRides.Values.Where(ride => ride.StartTime.Year == year)
+                : _activeRides.Values;
 
             return rides
                 .Sum(ride => _calculator.CalculateRentalPrice(ride.StartTime, endTime, ride.Scooter.PricePerMinute));
